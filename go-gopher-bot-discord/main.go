@@ -1,15 +1,16 @@
 package main
 
 import (
-	"encoding/json"
+	"crypto/sha1"
+	"encoding/hex"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/signal"
-	"strings"
+	"sort"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -64,9 +65,8 @@ type Gopher struct {
 	Name string `json: "name"`
 }
 
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the authenticated bot has access to.
 func listGames() string {
+	//this returns a string with the game picks and vetos neatly ordered
 	message := "Current Picks:\n"
 	for i := 0; i < len(gl); i++ {
 		message = message + "     " + gl[i] + "\n"
@@ -77,171 +77,122 @@ func listGames() string {
 	}
 	return message
 }
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func iclear() (err error) {
+	gl = nil
+	vl = nil
+	//s.ChannelMessageDelete(m.ChannelID, m.ID)
+	return err
+}
 
+func iList() (message string, err error) {
+	message = listGames()
+	return message, err
+}
+func iVeto(Content string) (message string, err error) {
+	veto := string(Content)[6:]
+	intVeto, Verr := strconv.Atoi(veto)
+	//if veto input was a number then set the veto to the game in gl
+	if Verr == nil {
+		if intVeto-1 < len(gl) {
+			veto = gl[intVeto-1]
+		} else {
+
+		}
+
+	}
+	vl = append(vl, veto)
+	message = veto + " vetoed\n" + listGames()
+	return message, err
+}
+func inslice(n string, h []string) bool {
+	for _, v := range h {
+		if v == n {
+			return true
+		}
+	}
+	return false
+}
+func iPick(Content string) (message string, err error) {
+	pick := string(Content)[6:]
+	gl = append(gl, pick)
+	message = pick + " added\n" + listGames()
+
+	return message, err
+}
+func iRoll() (message string, err error) {
+	selections := make([]string, 0)
+
+	for _, s := range gl {
+		if !inslice(s, vl) {
+			selections = append(selections, s)
+		}
+	}
+	sort.Strings(selections)
+	fmt.Println(selections)
+	hash := time.Now().Format("01-02-2006")
+	for i := 0; i < len(selections); i++ {
+		hash = hash + selections[i]
+	}
+	fmt.Println(hash)
+
+	h := sha1.New()
+	h.Write([]byte(hash))
+	sha1_hash := hex.EncodeToString(h.Sum(nil))
+
+	fmt.Println(hash, sha1_hash)
+
+	pick, err := strconv.ParseInt(sha1_hash, 16, 64)
+	pick = pick % int64(len(selections))
+	pickedGame := selections[pick]
+	message = pickedGame
+	message = pickedGame + " has been decided out of:\n" + listGames()
+	return message, err
+}
+func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// This function will be called (due to AddHandler above) every time a new
+	// message is created on any channel that the authenticated bot has access to.
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
+	message := "hmm"
+	var err error
+	err = nil
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
 	if m.Content == "!clear" {
-		gl = nil
-		vl = nil
-		return
+		iclear()
 	}
 	if m.Content == "!list" {
+		message, err = iList()
 
-		lMessage := listGames()
-		fmt.Println(lMessage)
-		if 1 == 1 {
-			// Send a text message
-			_, err := s.ChannelMessageSend(m.ChannelID, lMessage)
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't add pick! :-(")
+	}
+	if m.Content == "!trout" {
+		message = "trout that"
+	}
+	if m.Content == "!roll" {
+		fmt.Println("rolling")
+		message, err = iRoll()
+	}
+
+	if len(m.Content) > 5 {
+		if m.Content[:5] == "!pick" {
+			message, err = iPick(m.Content)
 		}
-		return
-	}
-	if m.Content == "trout" {
-		if 1 == 1 {
-			// Send a text message
-			_, err := s.ChannelMessageSend(m.ChannelID, "trout that")
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't add pick! :-(")
-		}
-		return
-	}
-	//ignore small inputs
-	if len(m.Content) < 6 {
-		return
-	}
-	if m.Content[:5] == "!pick" {
-		pick := string(m.Content)[6:]
-		gl = append(gl, pick)
-		pMessage := pick + " added\n" + listGames()
-		fmt.Println(pMessage)
-		if 1 == 1 {
-			// Send a text message
-			_, err := s.ChannelMessageSend(m.ChannelID, pMessage)
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't add pick! :-(")
-		}
-	}
-	if m.Content[:5] == "!veto" {
-		veto := string(m.Content)[6:]
-		vl = append(vl, veto)
-		vMessage := veto + " vetoed\n" + listGames()
-		fmt.Println(vMessage)
-		if 1 == 1 {
-			// Send a text message
-			_, err := s.ChannelMessageSend(m.ChannelID, vMessage)
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't add pick! :-(")
-		}
-	}
-	if m.Content[:5] == "!list" {
-		pick := string(m.Content)[6:]
-		vl = append(vl, pick)
-		pMessage := pick + " Vetoed"
-		fmt.Println(pMessage)
-		if 1 == 1 {
-			// Send a text message
-			_, err := s.ChannelMessageSend(m.ChannelID, pMessage)
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't add pick! :-(")
+
+		if m.Content[:5] == "!veto" {
+			message, err = iVeto(m.Content)
 		}
 	}
 
-	//example stuff leaving in
-	if m.Content == "!gopher" {
-
-		//Call the KuteGo API and retrieve our cute Dr Who Gopher
-		response, err := http.Get(KuteGoAPIURL + "/gopher/" + "dr-who")
+	if 1 == 1 {
+		// Send a text message
+		_, err = s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
 			fmt.Println(err)
 		}
-		defer response.Body.Close()
-
-		if response.StatusCode == 200 {
-			_, err = s.ChannelFileSend(m.ChannelID, "dr-who.png", response.Body)
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't get dr-who Gopher! :-(")
-		}
+	} else {
+		fmt.Println("Error: Can't add pick! :-(")
 	}
-
-	if m.Content == "!random" {
-
-		//Call the KuteGo API and retrieve a random Gopher
-		response, err := http.Get(KuteGoAPIURL + "/gopher/random/")
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer response.Body.Close()
-
-		if response.StatusCode == 200 {
-			_, err = s.ChannelFileSend(m.ChannelID, "random-gopher.png", response.Body)
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't get random Gopher! :-(")
-		}
-	}
-
-	if m.Content == "!gophers" {
-
-		//Call the KuteGo API and display the list of available Gophers
-		response, err := http.Get(KuteGoAPIURL + "/gophers/")
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer response.Body.Close()
-
-		if response.StatusCode == 200 {
-			// Transform our response to a []byte
-			body, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			// Put only needed informations of the JSON document in our array of Gopher
-			var data []Gopher
-			err = json.Unmarshal(body, &data)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			// Create a string with all of the Gopher's name and a blank line as separator
-			var gophers strings.Builder
-			for _, gopher := range data {
-				gophers.WriteString(gopher.Name + "\n")
-			}
-
-			// Send a text message with the list of Gophers
-			_, err = s.ChannelMessageSend(m.ChannelID, gophers.String())
-			if err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			fmt.Println("Error: Can't get list of Gophers! :-(")
-		}
-	}
+	return
 }

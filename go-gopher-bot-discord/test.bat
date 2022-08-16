@@ -1,0 +1,1 @@
+go run main.go -t MTAwNjY4MjI0OTU3NzY0ODIxOA.GUmV0n.rFkBJY9Coo5QcSMqmMRr7AhB8-TrYNj9Yuxt8s
