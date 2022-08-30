@@ -68,8 +68,10 @@ type Gopher struct {
 func listGames() string {
 	//this returns a string with the game picks and vetos neatly ordered
 	message := "Current Picks:\n"
-	for i := 0; i < len(gl); i++ {
-		message = message + "     " + gl[i] + "\n"
+	for i, s := range gl {
+		if !inslice(s, vl) {
+			message = message + "     " + gl[i] + "\n"
+		}
 	}
 	message = message + "Current vetos:\n"
 	for i := 0; i < len(vl); i++ {
@@ -119,6 +121,7 @@ func iPick(Content string) (message string, err error) {
 
 	return message, err
 }
+
 func iRoll() (message string, err error) {
 	selections := make([]string, 0)
 
@@ -192,7 +195,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Println(err)
 		}
 	} else {
-		fmt.Println("Error: Can't add pick! :-(")
+		return
 	}
 	return
 }

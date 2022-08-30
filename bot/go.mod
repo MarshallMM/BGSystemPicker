@@ -1,4 +1,4 @@
-module github.com/scraly/learning-go-by-examples/go-gopher-bot-discord
+module github.com/MarshallMM/BGSystemPicker
 
 go 1.19
 
