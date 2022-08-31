@@ -76,7 +76,7 @@ func listGames() string {
 	}
 	message = message + "Current vetos:\n"
 	for i := 0; i < len(vl); i++ {
-		message = message + "     " + vl[i] + "\n"
+		message = message + "     " + strconv.Itoa(i+1) + ". " + vl[i] + "\n"
 	}
 	return message
 }
@@ -123,19 +123,19 @@ func iVeto(Content string) (message string, err error) {
 func remove(slice []string, s int) []string {
 	return append(slice[:s], slice[s+1:]...)
 }
-func rm(Content string) (message string, err error) {
+func rm(Content string, slice []string) (NewSlice []string, err error) {
 
-	index, Verr := strconv.Atoi(string(Content)[4:])
+	index, Verr := strconv.Atoi(string(Content)[5:])
 
-	if Verr == nil && len(gl) > 0 && index >= 0 {
-		if index < len(gl) {
-			remove(gl, index)
-		} else if index == len(gl) {
-			gl = gl[:len(gl)-1]
+	if Verr == nil && len(slice) > 0 && index >= 0 {
+		if index < len(slice) {
+			NewSlice = remove(slice, index)
+		} else if index == len(slice) {
+			NewSlice = slice[:len(slice)-1]
 		}
-		message = "removed " + fmt.Sprint(index) + "\n" + listGames()
+
 	}
-	return message, err
+	return NewSlice, err
 }
 
 func inslice(n string, h []string) bool {
@@ -193,6 +193,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	var err error
 	err = nil
 	if m.Author.ID == s.State.User.ID {
+		//prevPost = m.MessageReference.MessageID
+		//prevChan = m.ChannelID
 		return
 	}
 
@@ -211,13 +213,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		fmt.Println("rolling")
 		message, err = iRoll()
 	}
-	if len(mes) > 4 {
-		if mes[:3] == "!rm" {
-			message, err = rm(mes)
-		}
-	}
-	if len(mes) > 5 {
 
+	if len(mes) > 5 {
+		if mes[:4] == "!rmp" {
+			gl, err = rm(mes, gl)
+			message = listGames()
+		}
+		if mes[:4] == "!rmv" {
+			vl, err = rm(mes, vl)
+			message = listGames()
+		}
 		if mes[:5] == "!pick" {
 			message, err = iPick(mes)
 		}
@@ -228,11 +233,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if message != "hmm" {
-		// Send a text message
-		_, err = s.ChannelMessageSend(m.ChannelID, message)
+		//err = s.ChannelMessageDelete(prevChan, prevPost)
 		if err != nil {
 			fmt.Println(err)
 		}
+		// Send a text message
+		_, err = s.ChannelMessageSend(m.ChannelID, message)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 	} else {
 		return
 	}
