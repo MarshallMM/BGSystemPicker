@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -70,7 +71,7 @@ func listGames() string {
 	message := "Current Picks:\n"
 	for i, s := range gl {
 		if !inslice(s, vl) {
-			message = message + "     " + gl[i] + "\n"
+			message = message + "     " + strconv.Itoa(i+1) + ". " + gl[i] + "\n"
 		}
 	}
 	message = message + "Current vetos:\n"
@@ -93,19 +94,50 @@ func iList() (message string, err error) {
 func iVeto(Content string) (message string, err error) {
 	veto := string(Content)[6:]
 	intVeto, Verr := strconv.Atoi(veto)
+	match := false
 	//if veto input was a number then set the veto to the game in gl
 	if Verr == nil {
 		if intVeto-1 < len(gl) {
 			veto = gl[intVeto-1]
+			match = true
 		} else {
 
 		}
 
+	} else {
+		for i := 0; i < len(gl); i++ {
+			if veto == gl[i] {
+				match = true
+			}
+		}
 	}
-	vl = append(vl, veto)
-	message = veto + " vetoed\n" + listGames()
+	if match {
+		vl = append(vl, veto)
+		message = veto + " vetoed\n" + listGames()
+	} else {
+		message = "No match for veto found, try again idiot"
+	}
+
 	return message, err
 }
+func remove(slice []string, s int) []string {
+	return append(slice[:s], slice[s+1:]...)
+}
+func rm(Content string) (message string, err error) {
+
+	index, Verr := strconv.Atoi(string(Content)[4:])
+
+	if Verr == nil && len(gl) > 0 && index >= 0 {
+		if index < len(gl) {
+			remove(gl, index)
+		} else if index == len(gl) {
+			gl = gl[:len(gl)-1]
+		}
+		message = "removed " + fmt.Sprint(index) + "\n" + listGames()
+	}
+	return message, err
+}
+
 func inslice(n string, h []string) bool {
 	for _, v := range h {
 		if v == n {
@@ -157,34 +189,41 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
 	message := "hmm"
+	mes := strings.ToLower(m.Content)
 	var err error
 	err = nil
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	if m.Content == "!clear" {
+	if mes == "!clear" {
 		iclear()
 	}
-	if m.Content == "!list" {
+	if mes == "!list" {
 		message, err = iList()
 
 	}
-	if m.Content == "!trout" {
+
+	if mes == "!trout" {
 		message = "trout that"
 	}
-	if m.Content == "!roll" {
+	if mes == "!roll" {
 		fmt.Println("rolling")
 		message, err = iRoll()
 	}
+	if len(mes) > 4 {
+		if mes[:3] == "!rm" {
+			message, err = rm(mes)
+		}
+	}
+	if len(mes) > 5 {
 
-	if len(m.Content) > 5 {
-		if m.Content[:5] == "!pick" {
-			message, err = iPick(m.Content)
+		if mes[:5] == "!pick" {
+			message, err = iPick(mes)
 		}
 
-		if m.Content[:5] == "!veto" {
-			message, err = iVeto(m.Content)
+		if mes[:5] == "!veto" {
+			message, err = iVeto(mes)
 		}
 	}
 
