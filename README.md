@@ -3,7 +3,8 @@ Board game system picker discord bot to get the group picking games\
 Commands:\
 !pick \<game>: adds \<game> to pick list\
 !veto \<game>:adds \<game> to veto list\
-!clear: clears the current pick and veto list
+!rmp # or !rmv # removes that game from the pick list or veto list
+!clear: clears the current pick and veto list\
 !list: lists out the current picks and vetos\
 !roll: sudo ramdomly pick a game out of the pick list that is not vetoed.\
   -A string of the current date and games is put through a hash function, and a number is generated to be the picked game.\
