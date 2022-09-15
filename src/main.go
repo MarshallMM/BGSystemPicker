@@ -19,7 +19,7 @@ var (
 
 type Game struct {
 	name     string
-	veto     bool
+	veto     int
 	pickedBy string
 	vetoedBy string
 }

@@ -17,8 +17,8 @@ func ListGames() string {
 	message := "Current Pool:\n"
 	vetoMessage := ""
 	for i, s := range gameList {
-		if s.veto {
-			vetoMessage = ", [vetoed by " + s.vetoedBy + "]"
+		if s.veto == 1 {
+			vetoMessage = " [vetoed by " + s.vetoedBy + "]"
 		} else {
 			vetoMessage = ""
 		}
@@ -41,7 +41,7 @@ func IPick(Content string, m *discordgo.MessageCreate) (message string, err erro
 	pick := string(Content)[6:]
 	gameList = append(gameList, Game{
 		name:     pick,
-		veto:     false,
+		veto:     0,
 		pickedBy: m.Author.Username,
 		vetoedBy: "",
 	})
@@ -67,9 +67,13 @@ func IVeto(Content string, m *discordgo.MessageCreate) (message string, err erro
 
 	for i, s := range gameList {
 		if veto == s.name {
-			gameList[i].veto = true
+			gameList[i].veto = 1
 			gameList[i].vetoedBy = m.Author.Username
 			match = true
+			sort.Slice(gameList[:], func(i, j int) bool {
+				return gameList[i].veto < gameList[j].veto
+			})
+
 			message = veto + " vetoed\n" + ListGames()
 		}
 	}
@@ -109,8 +113,8 @@ func Rmv(Content string) (message string) {
 	index, Verr := strconv.Atoi(string(Content)[5:])
 	index = index - 1 //make index start at 0, user inputs start at 1
 	if Verr == nil {
-		if gameList[index].veto {
-			gameList[index].veto = false
+		if gameList[index].veto == 1 {
+			gameList[index].veto = 0
 			message = ListGames()
 		} else {
 			message = "idk what number that was but it dont work"
@@ -129,7 +133,7 @@ func IRoll() (message string, err error) {
 
 	//checks lack of presense in veto list
 	for _, s := range gameList {
-		if !s.veto {
+		if s.veto == 0 {
 			selections = append(selections, s.name)
 		}
 	}
