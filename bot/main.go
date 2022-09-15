@@ -80,8 +80,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		Iclear()
 	}
 	if mes == "!list" {
-		message, err = IList()
-
+		message = ListGames()
 	}
 
 	if mes == "!trout" {
@@ -125,5 +124,4 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else {
 		return
 	}
-	return
 }
