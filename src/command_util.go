@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 // lists games in the games list and veto lists
@@ -16,11 +18,12 @@ func ListGames() string {
 	vetoMessage := ""
 	for i, s := range gameList {
 		if s.veto {
-			vetoMessage = "[vetoed]"
+			vetoMessage = ", [vetoed by " + s.vetoedBy + "]"
 		} else {
 			vetoMessage = ""
 		}
-		message = message + "     " + strconv.Itoa(i+1) + ". " + s.name + vetoMessage + "\n"
+		message = message + "     " + strconv.Itoa(i+1) + ". " + s.name
+		message = message + vetoMessage + "\n"
 	}
 
 	return message
@@ -33,9 +36,24 @@ func Iclear() (err error) {
 	return err
 }
 
+// this adds a pick to the games list
+func IPick(Content string, m *discordgo.MessageCreate) (message string, err error) {
+	pick := string(Content)[6:]
+	gameList = append(gameList, Game{
+		name:     pick,
+		veto:     false,
+		pickedBy: m.Author.Username,
+		vetoedBy: "",
+	})
+
+	message = pick + " added\n" + ListGames()
+
+	return message, err
+}
+
 // this adds a game to the veto list or takes the number shown by listgames, and adds the game at that point to the veto list.
 // games on the veto list cannot be selected when rolling
-func IVeto(Content string) (message string, err error) {
+func IVeto(Content string, m *discordgo.MessageCreate) (message string, err error) {
 	veto := string(Content)[6:]
 	intVeto, Verr := strconv.Atoi(veto)
 	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
@@ -47,9 +65,10 @@ func IVeto(Content string) (message string, err error) {
 		}
 	}
 
-	for i := 0; i < len(gameList); i++ {
-		if veto == gameList[i].name {
-			gameList[i].veto = true
+	for _, s := range gameList {
+		if veto == s.name {
+			s.veto = true
+			s.vetoedBy = m.Author.Username
 			match = true
 			message = veto + " vetoed\n" + ListGames()
 		}
@@ -100,29 +119,6 @@ func Rmv(Content string) (message string) {
 		message = "Not an integer input"
 	}
 	return message
-}
-
-// this checks the presense for string n in string array h
-func inslice(n string, h []string) bool {
-	for _, v := range h {
-		if v == n {
-			return true
-		}
-	}
-	return false
-}
-
-// this adds a pick to the games list
-func IPick(Content string) (message string, err error) {
-	pick := string(Content)[6:]
-	gameList = append(gameList, Game{
-		name: pick,
-		veto: false,
-	})
-
-	message = pick + " added\n" + ListGames()
-
-	return message, err
 }
 
 // this function gathers the games in the games list, checks that they are not present in the veto list.

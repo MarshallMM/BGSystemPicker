@@ -98,11 +98,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		}
 		if mes[:5] == "!pick" {
-			message, err = IPick(mes)
+			message, err = IPick(mes, m)
 		}
 
 		if mes[:5] == "!veto" {
-			message, err = IVeto(mes)
+			message, err = IVeto(mes, m)
 		}
 	}
 
