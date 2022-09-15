@@ -65,10 +65,10 @@ func IVeto(Content string, m *discordgo.MessageCreate) (message string, err erro
 		}
 	}
 
-	for _, s := range gameList {
+	for i, s := range gameList {
 		if veto == s.name {
-			s.veto = true
-			s.vetoedBy = m.Author.Username
+			gameList[i].veto = true
+			gameList[i].vetoedBy = m.Author.Username
 			match = true
 			message = veto + " vetoed\n" + ListGames()
 		}
