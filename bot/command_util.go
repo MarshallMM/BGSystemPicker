@@ -13,22 +13,22 @@ import (
 func ListGames() string {
 	//this returns a string with the game picks and vetos neatly ordered
 	message := "Current Pool:\n"
-	for i, s := range gl {
-		if !inslice(s, vl) {
-			message = message + "     " + strconv.Itoa(i+1) + ". " + gl[i] + "\n"
+	vetoMessage := ""
+	for i, s := range gameList {
+		if s.veto {
+			vetoMessage = "[vetoed]"
+		} else {
+			vetoMessage = ""
 		}
+		message = message + "     " + strconv.Itoa(i+1) + ". " + s.name + vetoMessage + "\n"
 	}
-	message = message + "Current vetos:\n"
-	for i := 0; i < len(vl); i++ {
-		message = message + "     " + strconv.Itoa(i+1) + ". " + vl[i] + "\n"
-	}
+
 	return message
 }
 
 // clears games list and veto list to reset everything
 func Iclear() (err error) {
-	gl = nil
-	vl = nil
+	gameList = nil
 	//s.ChannelMessageDelete(m.ChannelID, m.ID)
 	return err
 }
@@ -38,48 +38,68 @@ func Iclear() (err error) {
 func IVeto(Content string) (message string, err error) {
 	veto := string(Content)[6:]
 	intVeto, Verr := strconv.Atoi(veto)
+	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
 	match := false
-	//if veto input was a number then set the veto to the game in gl
-	if Verr == nil {
-		if intVeto-1 < len(gl) {
-			veto = gl[intVeto-1] //intVeto given by the user is indexed at 1 not zero
-			match = true
-		}
 
-	} else {
-		for i := 0; i < len(gl); i++ {
-			if veto == gl[i] {
-				match = true
-			}
+	if Verr == nil { //turn a number input into a gamename
+		if intVeto < len(gameList) {
+			veto = gameList[intVeto].name
 		}
 	}
+
+	for i := 0; i < len(gameList); i++ {
+		if veto == gameList[i].name {
+			gameList[i].veto = true
+			match = true
+			message = veto + " vetoed\n" + ListGames()
+		}
+	}
+
 	//if user messed up the bot command and the veto couldnt be added, call them out.
-	if match {
-		vl = append(vl, veto)
-		message = veto + " vetoed\n" + ListGames()
-	} else {
+	if !match {
 		message = "No match for veto found, try again idiot"
 	}
-
 	return message, err
 }
 
-// this can be called to remove a member from a string array, if a member was mistakenly added.
-func Rm(Content string, slice []string) (NewSlice []string, err error) {
+// this can be called to remove a member from an array, if a member was mistakenly added.
+func Rmp(Content string) (message string) {
 
 	index, Verr := strconv.Atoi(string(Content)[5:])
-	index = index - 1 //make index start at 0
-	if Verr == nil && len(slice) > 0 && index >= 0 {
+	index = index - 1 //make index start at 0, user inputs start at 1
+	if Verr == nil && len(gameList) > 0 && index >= 0 {
 		if index == 0 {
-			NewSlice = slice[1:]
-		} else if index < len(slice) {
-			NewSlice = append(slice[:index], slice[index+1:]...)
-		} else if index == len(slice) {
-			NewSlice = slice[:len(slice)-1]
+			gameList = gameList[1:]
+			message = ListGames()
+		} else if index < len(gameList) {
+			gameList = append(gameList[:index], gameList[index+1:]...)
+			message = ListGames()
+		} else if index == len(gameList) {
+			gameList = gameList[:len(gameList)-1]
+			message = ListGames()
+		} else {
+			message = "idk what number that was but it dont work"
 		}
 
+	} else {
+		message = "Not an integer input"
 	}
-	return NewSlice, err
+	return message
+}
+func Rmv(Content string) (message string) {
+	index, Verr := strconv.Atoi(string(Content)[5:])
+	index = index - 1 //make index start at 0, user inputs start at 1
+	if Verr == nil {
+		if gameList[index].veto {
+			gameList[index].veto = false
+			message = ListGames()
+		} else {
+			message = "idk what number that was but it dont work"
+		}
+	} else {
+		message = "Not an integer input"
+	}
+	return message
 }
 
 // this checks the presense for string n in string array h
@@ -95,7 +115,11 @@ func inslice(n string, h []string) bool {
 // this adds a pick to the games list
 func IPick(Content string) (message string, err error) {
 	pick := string(Content)[6:]
-	gl = append(gl, pick)
+	gameList = append(gameList, Game{
+		name: pick,
+		veto: false,
+	})
+
 	message = pick + " added\n" + ListGames()
 
 	return message, err
@@ -108,9 +132,9 @@ func IRoll() (message string, err error) {
 	selections := make([]string, 0)
 
 	//checks lack of presense in veto list
-	for _, s := range gl {
-		if !inslice(s, vl) {
-			selections = append(selections, s)
+	for _, s := range gameList {
+		if !s.veto {
+			selections = append(selections, s.name)
 		}
 	}
 	//sorts selections so to avoid order of picks effecting result.

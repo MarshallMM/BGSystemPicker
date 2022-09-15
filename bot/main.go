@@ -8,25 +8,27 @@ import (
 	"strings"
 	"syscall"
 
-	//com "myapp/command"
-
 	"github.com/bwmarrin/discordgo"
 )
 
 // Variables used for command line parameters
 var (
-	Token string
-	gl    []string
-	vl    []string
+	Token    string
+	gameList []Game
 )
+
+type Game struct {
+	name     string
+	veto     bool
+	pickedBy string
+	vetoedBy string
+}
 
 func init() {
 	flag.StringVar(&Token, "t", "", "Bot Token")
 	flag.Parse()
 }
 func main() {
-	//var gameList []string
-	//var vetoList []string
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
@@ -55,10 +57,6 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	dg.Close()
-}
-
-type Gopher struct {
-	Name string `json: "name"`
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -93,12 +91,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if len(mes) > 5 {
 		if mes[:4] == "!rmp" {
-			gl, err = Rm(mes, gl)
-			message = ListGames()
+			message = Rmp(mes)
 		}
 		if mes[:4] == "!rmv" {
-			vl, err = Rm(mes, vl)
-			message = ListGames()
+			message = Rmv(mes)
+
 		}
 		if mes[:5] == "!pick" {
 			message, err = IPick(mes)
