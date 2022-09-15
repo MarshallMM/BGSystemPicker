@@ -16,6 +16,10 @@ func ListGames() string {
 	//this returns a string with the game picks and vetos neatly ordered
 	message := "Current Pool:\n"
 	vetoMessage := ""
+	//sort non vetoed games first
+	sort.Slice(gameList[:], func(i, j int) bool {
+		return gameList[i].veto < gameList[j].veto
+	})
 	for i, s := range gameList {
 		if s.veto == 1 {
 			vetoMessage = " [vetoed by " + s.vetoedBy + "]"
@@ -70,10 +74,6 @@ func IVeto(Content string, m *discordgo.MessageCreate) (message string, err erro
 			gameList[i].veto = 1
 			gameList[i].vetoedBy = m.Author.Username
 			match = true
-			sort.Slice(gameList[:], func(i, j int) bool {
-				return gameList[i].veto < gameList[j].veto
-			})
-
 			message = veto + " vetoed\n" + ListGames()
 		}
 	}
