@@ -41,7 +41,7 @@ func Iclear() (err error) {
 }
 
 // this adds a pick to the games list
-func IPick(Content string, m *discordgo.MessageCreate) (message string, err error) {
+func IPick(Content string, m *discordgo.MessageCreate) (message string) {
 	pick := string(Content)[6:]
 	gameList = append(gameList, Game{
 		name:     pick,
@@ -52,12 +52,12 @@ func IPick(Content string, m *discordgo.MessageCreate) (message string, err erro
 
 	message = pick + " added\n" + ListGames()
 
-	return message, err
+	return message
 }
 
 // this adds a game to the veto list or takes the number shown by listgames, and adds the game at that point to the veto list.
 // games on the veto list cannot be selected when rolling
-func IVeto(Content string, m *discordgo.MessageCreate) (message string, err error) {
+func IVeto(Content string, m *discordgo.MessageCreate) (message string) {
 	veto := string(Content)[6:]
 	intVeto, Verr := strconv.Atoi(veto)
 	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
@@ -90,7 +90,7 @@ func IVeto(Content string, m *discordgo.MessageCreate) (message string, err erro
 	if !match {
 		message = "No match for veto found, try again idiot"
 	}
-	return message, err
+	return message
 }
 
 // this can be called to remove a member from an array, if a member was mistakenly added.

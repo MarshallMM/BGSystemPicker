@@ -62,51 +62,44 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// This function will be called (due to AddHandler above) every time a new
 	// message is created on any channel that the authenticated bot has access to.
-	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
-	message := "hmm"
+	var (
+		err     error
+		message string
+	)
+	message = ""
 	mes := strings.ToLower(m.Content)
-	var err error
-	err = nil
+
+	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		//prevPost = m.MessageReference.MessageID
 		//prevChan = m.ChannelID
 		return
 	}
-
-	if mes == "!clear" {
+	switch mes {
+	case "!clear":
 		Iclear()
-	}
-	if mes == "!list" {
+	case "!list":
 		message = ListGames()
-	}
-
-	if mes == "!trout" {
+	case "!trout":
 		message = "trout that"
-	}
-	if mes == "!roll" {
-		fmt.Println("rolling")
+	case "!roll":
 		message, err = IRoll()
 	}
 
 	if len(mes) > 5 {
-		if mes[:4] == "!rmp" {
+		switch mes[:5] {
+		case "!rmp ":
 			message = Rmp(mes)
-		}
-		if mes[:4] == "!rmv" {
+		case "!rmv ":
 			message = Rmv(mes)
-
-		}
-		if mes[:5] == "!pick" {
-			message, err = IPick(mes, m)
-		}
-
-		if mes[:5] == "!veto" {
-			message, err = IVeto(mes, m)
+		case "!pick":
+			message = IPick(mes, m)
+		case "!veto":
+			message = IVeto(mes, m)
 		}
 	}
 
-	if message != "hmm" {
+	if message != "" {
 		//err = s.ChannelMessageDelete(prevChan, prevPost)
 		if err != nil {
 			fmt.Println(err)
