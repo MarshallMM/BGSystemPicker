@@ -70,17 +70,16 @@ func IVeto(Content string, m *discordgo.MessageCreate) (message string) {
 	}
 
 	for i, s := range gameList {
-		if veto == s.name {
+		if veto == s.name && !match {
 			if s.veto == 0 {
 				gameList[i].veto = 1
 				gameList[i].vetoedBy = m.Author.Username
 				match = true
-				sort.Slice(gameList[:], func(i, j int) bool {
-					return gameList[i].veto < gameList[j].veto
-				})
+
 				message = veto + " vetoed\n" + ListGames()
 			} else {
 				message = "already vetoed numnuts"
+				match = true
 			}
 
 		}
@@ -123,6 +122,7 @@ func Rmv(Content string) (message string) {
 	if Verr == nil {
 		if gameList[index].veto == 1 {
 			gameList[index].veto = 0
+			gameList[index].vetoedBy = ""
 			message = ListGames()
 		} else {
 			message = "idk what number that was but it dont work"
