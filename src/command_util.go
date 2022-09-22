@@ -59,37 +59,29 @@ func IPick(Content string, m *discordgo.MessageCreate) (message string) {
 // games on the veto list cannot be selected when rolling
 func IVeto(Content string, m *discordgo.MessageCreate) (message string) {
 	veto := string(Content)[6:]
-	intVeto, Verr := strconv.Atoi(veto)
-	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
-	match := false
+	intVeto, vErr := strconv.Atoi(veto)
 
-	if Verr == nil { //turn a number input into a gamename
-		if intVeto < len(gameList) {
-			veto = gameList[intVeto].name
-		}
-	}
+	if vErr == nil {
 
-	for i, s := range gameList {
-		if veto == s.name && !match {
-			if s.veto == 0 {
-				gameList[i].veto = 1
-				gameList[i].vetoedBy = m.Author.Username
-				match = true
-
-				message = veto + " vetoed\n" + ListGames()
-			} else {
-				message = "already vetoed numnuts"
-				match = true
+	} else { //turn a game input into a number
+		for i, s := range gameList {
+			if veto == s.name {
+				intVeto = i
 			}
-
 		}
 	}
-
-	//if user messed up the bot command and the veto couldnt be added, call them out.
-	if !match {
-		message = "No match for veto found, try again idiot"
+	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
+	if intVeto < 0 || intVeto >= len(gameList) {
+		if gameList[intVeto].veto == 0 {
+			gameList[intVeto].veto = 1
+			gameList[intVeto].vetoedBy = m.Author.Username
+			return veto + " vetoed\n" + ListGames()
+		} else {
+			return "already vetoed numnuts"
+		}
 	}
-	return message
+	//if user messed up the bot command and the veto couldnt be added, call them out.
+	return "No match for veto found, try again idiot"
 }
 
 // this can be called to remove a member from an array, if a member was mistakenly added.
