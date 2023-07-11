@@ -159,8 +159,8 @@ func IRoll() (message string, err error) {
 	pickedGame := selections[intPick]
 	//message out
 	messgge = "Why do we have to play this game?/n"
-	message = message + "Because we have to play it./n"
-	message = message + "But it's a bad game.../n"
+	message = message + "Because it was chosen./n"
+	message = message + "But it's a bad game...?/n"
 	message = message + "Because its the game the boys deserve, but not the one it needs right now./n"
 	message = message + "So we'll play it. Because we can take it. Because its not our favorite game./n"
 	message = message + "It's an enduring challenge. A meticulous stratagy. A "+ pickedGame+ " adventure."
