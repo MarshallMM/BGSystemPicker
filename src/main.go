@@ -15,6 +15,8 @@ import (
 var (
 	Token    string
 	gameList []Game
+	lockdownEnabled bool
+	authorizedList []string
 )
 
 type Game struct {
@@ -65,38 +67,63 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	var (
 		err     error
 		message string
+		authorized bool
 	)
 	message = ""
 	mes := strings.ToLower(m.Content)
 
-	// Ignore all messages created by the bot itself
+
+	// Iterate through the slice to check if any value equals the specific one
+	authorized = false
+	for _, str := range authorizedList {
+		if str == m.Author.ID {
+			authorized = true
+			break
+		}
+	}
+	
+	// Ignore all messages created by the bot itself or non auth users if lockdown is in place
 	if m.Author.ID == s.State.User.ID {
 		//prevPost = m.MessageReference.MessageID
 		//prevChan = m.ChannelID
 		return
-	}
-	switch mes {
-	case "!clear":
-		Iclear()
-	case "!list":
-		message = ListGames()
-	case "!trout":
-		message = "trout that"
-	case "!roll":
-		message, err = IRoll()
+	} else if !authorized && lockdownEnabled {
+		return
 	}
 
-	if len(mes) > 5 {
-		switch mes[:5] {
-		case "!rmp ":
-			message = Rmp(mes)
-		case "!rmv ":
-			message = Rmv(mes)
-		case "!pick":
-			message = IPick(mes, m)
-		case "!veto":
-			message = IVeto(mes, m)
+	// Authorized users can lockdown bot to only authorized users
+	if authorized && mes == "!lockdown" {
+		lockdownEnabled = !lockdownEnabled
+		return
+	}
+		
+	
+	if authorized || !lockdownEnabled {	
+		switch mes {
+		case "!clear":
+			Iclear()
+		case "!list":
+			message = ListGames()
+		case "!trout":
+			message = "trout that"
+		case "!roll":
+			message, err = IRoll()
 		}
+	
+		if len(mes) > 5 {
+			switch mes[:5] {
+			case "!rmp ":
+				message = Rmp(mes)
+			case "!rmv ":
+				message = Rmv(mes)
+			case "!pick":
+				message = IPick(mes, m)
+			case "!veto":
+				message = IVeto(mes, m)
+			}
+		}
+	} else {
+		fmt.Printf("%s attempted to use the below command: %s,m.Author.ID, m.content)
 	}
 
 	if message != "" {
@@ -111,7 +138,5 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Println(err)
 		}
 
-	} else {
-		return
-	}
+	} 
 }
