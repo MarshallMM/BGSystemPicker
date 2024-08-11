@@ -13,8 +13,9 @@ import (
 
 // Variables used for command line parameters
 var (
-	Token    string
-	gameList []Game
+	Token             string
+	gameList          []Game
+	previousMessageID string
 )
 
 type Game struct {
@@ -83,7 +84,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "!trout":
 		message = "trout that"
 	case "!roll":
-		message, err = IRoll()
+		message = IRoll()
 	}
 
 	if len(mes) > 5 {
@@ -100,15 +101,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if message != "" {
-		//err = s.ChannelMessageDelete(prevChan, prevPost)
-		if err != nil {
-			fmt.Println(err)
+		// If there's a previous message, delete it
+		if previousMessageID != "" {
+			err = s.ChannelMessageDelete(m.ChannelID, previousMessageID)
+			if err != nil {
+				fmt.Println("error deleting message,", err)
+			}
 		}
 		// Send a text message
-		_, err = s.ChannelMessageSend(m.ChannelID, message)
+		msg, err := s.ChannelMessageSend(m.ChannelID, message)
 
 		if err != nil {
 			fmt.Println(err)
+		} else {
+			previousMessageID = msg.ID
 		}
 
 	} else {

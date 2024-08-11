@@ -26,7 +26,7 @@ func ListGames() string {
 		} else {
 			vetoMessage = ""
 		}
-		message = message + "     " + strconv.Itoa(i+1) + ". " + s.name
+		message = message + "     " + strconv.Itoa(i+1) + ". " + s.name + " [picked by " + s.pickedBy + "]"
 		message = message + vetoMessage + "\n"
 	}
 
@@ -128,7 +128,7 @@ func Rmv(Content string) (message string) {
 // this function gathers the games in the games list, checks that they are not present in the veto list.
 // Then builds a hash input from the current date and the names of all the games not vetoed.
 // then generates a sudo random number from the input, uses the modulo of the number of games to select a game.
-func IRoll() (message string, err error) {
+func IRoll() (message string) {
 	selections := make([]string, 0)
 
 	//checks lack of presense in veto list
@@ -152,12 +152,12 @@ func IRoll() (message string, err error) {
 	h.Write([]byte(hash))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
 	fmt.Println(hash, sha1_hash)
-	randomN, err := strconv.ParseInt(sha1_hash, 16, 64)
+	randomN, _ := strconv.ParseInt(sha1_hash, 16, 64)
 	//with get the remainder of the sudo random number by number of games.
 	intPick := randomN % int64(len(selections))
 	//define picked game as the index
 	pickedGame := selections[intPick]
 	//message out
 	message = pickedGame + " has been decided out of:\n" + ListGames()
-	return message, err
+	return message
 }
