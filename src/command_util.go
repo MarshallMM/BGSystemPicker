@@ -71,17 +71,18 @@ func IVeto(Content string, m *discordgo.MessageCreate) (message string) {
 		}
 	}
 	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
+	// if user messed up the bot command and the veto couldnt be added, call them out.
 	if intVeto < 0 || intVeto >= len(gameList) {
-		if gameList[intVeto].veto == 0 {
-			gameList[intVeto].veto = 1
-			gameList[intVeto].vetoedBy = m.Author.Username
-			return veto + " vetoed\n" + ListGames()
-		} else {
-			return "already vetoed numnuts"
-		}
+		return "invalid veto numnuts" + ListGames()
 	}
-	//if user messed up the bot command and the veto couldnt be added, call them out.
-	return "No match for veto found, try again idiot"
+
+	if gameList[intVeto].veto == 0 {
+		gameList[intVeto].veto = 1
+		gameList[intVeto].vetoedBy = m.Author.Username
+		return veto + " vetoed\n" + ListGames()
+	} else {
+		return "already vetoed numnuts" + ListGames()
+	}
 }
 
 // this can be called to remove a member from an array, if a member was mistakenly added.
@@ -100,11 +101,11 @@ func Rmp(Content string) (message string) {
 			gameList = gameList[:len(gameList)-1]
 			message = ListGames()
 		} else {
-			message = "idk what number that was but it dont work"
+			message = "idk what number that was but it dont work" + ListGames()
 		}
 
 	} else {
-		message = "Not an integer input"
+		message = "Not an integer input" + ListGames()
 	}
 	return message
 }
@@ -117,10 +118,10 @@ func Rmv(Content string) (message string) {
 			gameList[index].vetoedBy = ""
 			message = ListGames()
 		} else {
-			message = "idk what number that was but it dont work"
+			message = "idk what number that was but it dont work" + ListGames()
 		}
 	} else {
-		message = "Not an integer input"
+		message = "Not an integer input" + ListGames()
 	}
 	return message
 }
