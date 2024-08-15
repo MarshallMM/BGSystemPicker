@@ -83,8 +83,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		Iclear()
 	case "!list":
 		message = ListGames()
-	case "!trout":
-		message = "trout that"
 	case "!roll":
 		message = IRoll()
 		keepMessage = true
@@ -124,10 +122,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Record the message ID to delete on the next post... or dont record it if this message should be kept
 	if err != nil {
 		fmt.Println(err)
-	} else if !keepMessage {
-		previousMessageID = msg.ID
-	} else {
+	} else if keepMessage {
 		previousMessageID = ""
+	} else {
+		previousMessageID = msg.ID
 	}
 
 }
