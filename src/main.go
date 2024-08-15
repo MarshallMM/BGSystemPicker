@@ -16,6 +16,7 @@ var (
 	Token             string
 	gameList          []Game
 	previousMessageID string
+	gitDescription    string
 )
 
 type Game struct {
@@ -86,6 +87,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message = "trout that"
 	case "!roll":
 		message = IRoll()
+		keepMessage = true
+	case "!version":
+		message = gitDescription + "\nhttps://github.com/MarshallMM/BGSystemPicker"
 		keepMessage = true
 	}
 
