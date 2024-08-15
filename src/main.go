@@ -69,13 +69,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	)
 	message = ""
 	mes := strings.ToLower(m.Content)
+	keepMessage := false
 
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
-		//prevPost = m.MessageReference.MessageID
-		//prevChan = m.ChannelID
 		return
 	}
+
+	// Look for basic commands
 	switch mes {
 	case "!clear":
 		Iclear()
@@ -85,8 +86,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		message = "trout that"
 	case "!roll":
 		message = IRoll()
+		keepMessage = true
 	}
 
+	// Look for more complex commands with payloads
 	if len(mes) > 5 {
 		switch mes[:5] {
 		case "!rmp ":
@@ -99,25 +102,28 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message = IVeto(mes, m)
 		}
 	}
-
-	if message != "" {
-		// If there's a previous message, delete it
-		if previousMessageID != "" {
-			err = s.ChannelMessageDelete(m.ChannelID, previousMessageID)
-			if err != nil {
-				fmt.Println("error deleting message,", err)
-			}
-		}
-		// Send a text message
-		msg, err := s.ChannelMessageSend(m.ChannelID, message)
-
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			previousMessageID = msg.ID
-		}
-
-	} else {
+	// Return Early if no message was created by any commands
+	if message == "" {
 		return
 	}
+
+	// If there's a previous message id saved, and we arent keeping the current message, delete
+	if previousMessageID != "" && !keepMessage {
+		err = s.ChannelMessageDelete(m.ChannelID, previousMessageID)
+		if err != nil {
+			fmt.Println("error deleting message,", err)
+		}
+	}
+	// Send a text message
+	msg, err := s.ChannelMessageSend(m.ChannelID, message)
+
+	// Record the message ID to delete on the next post... or dont record it if this message should be kept
+	if err != nil {
+		fmt.Println(err)
+	} else if !keepMessage {
+		previousMessageID = msg.ID
+	} else {
+		previousMessageID = ""
+	}
+
 }
