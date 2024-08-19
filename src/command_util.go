@@ -129,7 +129,7 @@ func Rmv(Content string) (message string) {
 // this function gathers the games in the games list, checks that they are not present in the veto list.
 // Then builds a hash input from the current date and the names of all the games not vetoed.
 // then generates a sudo random number from the input, uses the modulo of the number of games to select a game.
-func IRoll() (message string) {
+func IRoll(m *discordgo.MessageCreate) (message string) {
 	selections := make([]string, 0)
 
 	//checks lack of presense in veto list
@@ -143,27 +143,30 @@ func IRoll() (message string) {
 	fmt.Println(selections)
 	//create hash input with date then add selections
 	hash := time.Now().Format("01-02-2006")
+	// add the channels unique id
+	hash = hash + m.ChannelID
 	for i := 0; i < len(selections); i++ {
 		hash = hash + selections[i]
 	}
 	fmt.Println(hash)
 
-	//get a sudo random number from the input
+	// get a sudo random number from the input
 	h := sha1.New()
 	h.Write([]byte(hash))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
 	fmt.Println(hash, sha1_hash)
 	randomN, _ := strconv.ParseInt(sha1_hash, 16, 64)
-	//with get the remainder of the sudo random number by number of games.
+	// with get the remainder of the sudo random number by number of games.
 	intPick := randomN % int64(len(selections))
-	//define picked game as the index
+	// define picked game as the index
 	pickedGame := selections[intPick]
-	//message out
+
+	// message out the copypasta and the game
 	message = "Why do we have to play this game?\n"
 	message = message + ">Because it was chosen.\n"
 	message = message + "But it's a bad game...?\n"
 	message = message + ">Because its the game Reno deserves, but not the game Reno wants right now.\n"
 	message = message + ">So we'll play it. Because we can take it. Because we're better then Vegas Slop.\n"
-	message = message + "It's an enduring challenge. A meticulous stratagy. A  " + pickedGame + "  adventure."
+	message = message + ">It's an enduring challenge. A meticulous stratagy. A  [" + pickedGame + "]  adventure."
 	return message
 }
