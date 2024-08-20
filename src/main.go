@@ -101,7 +101,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate, logger *Log
 	case "!list":
 		message = ListGames()
 	case "!roll":
-		message = IRoll(m)
+		message = IRoll(m, logger)
 		keepMessage = true
 	case "!version":
 		message = gitDescription + "\nhttps://github.com/MarshallMM/BGSystemPicker"
