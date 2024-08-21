@@ -60,17 +60,16 @@ func IPick(Content string, m *discordgo.MessageCreate) (message string) {
 func IVeto(Content string, m *discordgo.MessageCreate) (message string) {
 	veto := string(Content)[6:]
 	intVeto, vErr := strconv.Atoi(veto)
+	intVeto = intVeto - 1 // intVeto given by the user is indexed at 1 not zero
 
-	if vErr == nil {
-
-	} else { //turn a game input into a number
+	if vErr != nil { // turn a game(string) input into a number if it matches
 		for i, s := range gameList {
 			if veto == s.name {
 				intVeto = i
 			}
 		}
 	}
-	intVeto = intVeto - 1 //intVeto given by the user is indexed at 1 not zero
+
 	// if user messed up the bot command and the veto couldnt be added, call them out.
 	if intVeto < 0 || intVeto >= len(gameList) {
 		return "invalid veto numnuts" + ListGames()
