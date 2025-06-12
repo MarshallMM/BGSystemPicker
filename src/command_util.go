@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"strconv"
@@ -148,21 +148,20 @@ func IRoll(m *discordgo.MessageCreate, logger *Logger) (message string) {
 	logger.Println(fmt.Sprintf("Pick selections: %s", selections))
 
 	// create hash input with date then add selections
-	hash := time.Now().Format("01-02-2006")
+	hashSeed := time.Now().Format("01-02-2006")
 	// add the channels unique id
-	hash = hash + m.ChannelID
+	hashSeed = hashSeed + m.ChannelID
 	for i := 0; i < len(selections); i++ {
-		hash = hash + selections[i]
+		hashSeed = hashSeed + selections[i]
 	}
 
 	// get a sudo random number from the input
-	h := sha1.New()
-	h.Write([]byte(hash))
-	sha1_hash := hex.EncodeToString(h.Sum(nil))
-	logger.Println(fmt.Sprintf("Hash: %s, sha1_hash %s", hash, sha1_hash))
-	randomN, _ := strconv.ParseInt(sha1_hash, 16, 64)
+	sha256_hash := sha256.Sum256([]byte(hashSeed))
+	randomN := binary.BigEndian.Uint64(sha256_hash[:8])
+	logger.Println(fmt.Sprintf("Hash: %s, sha1_hash %s, randomNumber %v", hashSeed, sha256_hash, randomN))
+
 	// with get the remainder of the sudo random number by number of games.
-	intPick := randomN % int64(len(selections))
+	intPick := randomN % uint64(len(selections))
 	// define picked game as the index
 	pickedGame := selections[intPick]
 
